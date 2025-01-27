@@ -12,12 +12,34 @@
 // pattern. You can keep it, modify it, or remove it, as you
 // wish.
 
+// E-mail
+[a-z\d_\.]+@.*[a-z\d]+
+
+// The HTTP URI
+https?://[a-z\d;/\?:@&=\+\$,#\._\-%!]+
+
+// x.x.
+[a-z]\.([a-z]\.)+
+
+// File
+[a-z\d_\.]+\.[a-z]+
 
 // Twenty-four seven
 \d+/\d+
 
+// Words / digits connected with dots or hyphens
+([a-z\d]+[\.\-])+[a-z\d]+
 
-// ADD YOUR PATTERNS HERE
+// Digits connected with :
+(\d+:)+\d+
+
+// Numbers
+[\+\-\$]\d+
+(\d+,)+\d+
+
+// Word for short
+[a-z]+'[a-z]+
+'em
 
 // The patterns will be tried from top to bottom, so it is a
 // good idea to put more specific patterns above more general
