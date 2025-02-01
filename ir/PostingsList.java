@@ -7,9 +7,6 @@
 
 package ir;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -28,12 +25,10 @@ public class PostingsList {
     }
 
     /** Returns the ith posting. */
-    @NotNull
     public PostingsEntry get(int i) {
         return list.get(index.get(i));
     }
 
-    @Nullable
     public PostingsEntry getByDocID(int docID) {
         return list.get(docID);
     }
@@ -46,8 +41,7 @@ public class PostingsList {
         entry.offsets.add(offset);
     }
 
-    @NotNull
-    public PostingsList intersect(@NotNull PostingsList other) {
+    public PostingsList intersect(PostingsList other) {
         var result = new PostingsList();
         for (var docID : this.list.keySet()) {
             if (other.list.containsKey(docID)) {
