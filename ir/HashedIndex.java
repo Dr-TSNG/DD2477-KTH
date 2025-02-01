@@ -27,7 +27,7 @@ public class HashedIndex implements Index {
      */
     public void insert(String token, int docID, int offset) {
         var list = index.computeIfAbsent(token, _ -> new PostingsList());
-        list.add(new PostingsEntry(docID, 0));
+        list.add(docID, offset);
     }
 
 

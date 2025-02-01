@@ -7,16 +7,14 @@
 
 package ir;
 
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.io.Serializable;
+import java.util.TreeSet;
 
 public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
 
     public int docID;
     public double score;
+    public TreeSet<Integer> offsets;
 
     /**
      * PostingsEntries are compared by their score (only relevant
@@ -32,6 +30,7 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
     public PostingsEntry(int docID, double score) {
         this.docID = docID;
         this.score = score;
+        this.offsets = new TreeSet<>();
     }
 }
 
