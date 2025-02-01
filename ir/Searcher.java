@@ -30,6 +30,25 @@ public class Searcher {
      * @return A postings list representing the result of the query.
      */
     public PostingsList search(Query query, QueryType queryType, RankingType rankingType, NormalizationType normType) {
-        return index.getPostings(query.queryterm.getFirst().term);
+        return switch (queryType) {
+            case INTERSECTION_QUERY -> searchIntersectionQuery(query);
+            case PHRASE_QUERY -> null;
+            case RANKED_QUERY -> null;
+        };
+    }
+
+    private PostingsList searchIntersectionQuery(Query query) {
+        PostingsList result = null;
+        for (var queryTerm : query.queryterm) {
+            var postings = index.getPostings(queryTerm.term);
+            if (postings != null) {
+                if (result == null) {
+                    result = postings;
+                } else {
+                    result = result.intersect(postings);
+                }
+            }
+        }
+        return result;
     }
 }

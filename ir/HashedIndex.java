@@ -8,8 +8,9 @@
 
 package ir;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
-import java.util.Iterator;
 
 
 /**
@@ -34,6 +35,7 @@ public class HashedIndex implements Index {
      * Returns the postings for a specific term, or null
      * if the term is not in the index.
      */
+    @Nullable
     public PostingsList getPostings(String token) {
         return index.get(token);
     }
