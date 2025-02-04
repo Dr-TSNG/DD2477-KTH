@@ -9,11 +9,13 @@ import java.util.concurrent.Semaphore;
 
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
-    public static final int GROUPSIZE = 120000;
+    public static final int GROUPSIZE = 6000;
     public static final int WEAK_CAPACITY = 120000;
 
     private final Semaphore groupSem = new Semaphore(0);
     private final CountDownLatch cleanupLatch = new CountDownLatch(1);
+    private int lastDocID = 0;
+    private int docIDProcessed = 0;
     private int currentIndexGroup = 0;
 
     PersistentScalableHashedIndex() {
@@ -22,10 +24,15 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
     @Override
     public void insert(String token, int docID, int offset) {
-        if (index.size() == GROUPSIZE) {
+        if (docID != lastDocID) {
+            lastDocID = docID;
+            docIDProcessed++;
+        }
+        if (docIDProcessed == GROUPSIZE) {
             writeIndex();
             index.clear();
             free = 0;
+            docIDProcessed = 0;
             currentIndexGroup++;
             try {
                 dictionaryFile = new RandomAccessFile(INDEXDIR + "/" + DICTIONARY_FNAME + "." + currentIndexGroup, "rw");
