@@ -57,9 +57,8 @@ public class PostingsList {
     @Override
     public String toString() {
         var sb = new StringBuilder();
-        sb.append(list.size()).append(" ");
         for (var entry : list) {
-            sb.append(entry.docID).append(" ");
+            sb.append(entry).append(" ");
         }
         return sb.toString();
     }
@@ -67,8 +66,8 @@ public class PostingsList {
     public static PostingsList fromString(String s) {
         var list = new PostingsList();
         var data = s.split(" ");
-        for (int i = 1; i < data.length; i++) {
-            list.list.add(PostingsEntry.fromString(data[i]));
+        for (var entry : data) {
+            list.list.add(PostingsEntry.fromString(entry));
         }
         return list;
     }
