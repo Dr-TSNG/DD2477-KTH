@@ -8,8 +8,9 @@
 package ir;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.stream.IntStream;
 
 /**
@@ -66,16 +67,16 @@ public class Searcher {
         var postings = index.getPostings(firstTerm.term);
         for (int i = 0; i < postings.size(); i++) {
             var entry = postings.get(i);
-            var followings = new ArrayList<TreeSet<Integer>>();
+            var followings = new ArrayList<List<Integer>>();
             if (query.queryterm.stream().skip(1)
                     .allMatch(q -> Optional.of(index.getPostings(q.term))
-                            .map(p -> p.getByDocID(entry.docID))
+                            .map(p -> p.searchDocID(entry.docID))
                             .map(e -> e.offsets)
                             .map(followings::add)
                             .isPresent())) {
                 entry.offsets.stream()
                         .filter(base -> IntStream.range(0, followings.size())
-                                .allMatch(j -> followings.get(j).contains(base + j + 1)))
+                                .allMatch(j -> Collections.binarySearch(followings.get(j), base + j + 1) >= 0))
                         .findFirst()
                         .ifPresent(offset -> result.add(entry.docID, offset));
             }

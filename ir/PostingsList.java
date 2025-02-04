@@ -8,15 +8,13 @@
 package ir;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class PostingsList {
 
     /** The postings list */
-    private final HashMap<Integer, PostingsEntry> list = new HashMap<>();
-
-    /** Fast lookup for docIDs */
-    private final ArrayList<Integer> index = new ArrayList<>();
+    private final ArrayList<PostingsEntry> list = new ArrayList<>();
 
 
     /** Number of postings in this list. */
@@ -26,28 +24,31 @@ public class PostingsList {
 
     /** Returns the ith posting. */
     public PostingsEntry get(int i) {
-        return list.get(index.get(i));
+        return list.get(i);
     }
 
-    public PostingsEntry getByDocID(int docID) {
-        return list.get(docID);
+    public PostingsEntry searchDocID(int docID) {
+        var i = Collections.binarySearch(
+                list,
+                new PostingsEntry(docID, 0),
+                Comparator.comparingInt(e -> e.docID)
+        );
+        return i >= 0 ? list.get(i) : null;
     }
 
     public void add(int docID, int offset) {
-        var entry = list.computeIfAbsent(docID, _ -> {
-            index.add(docID);
-            return new PostingsEntry(docID, 0);
-        });
-        entry.offsets.add(offset);
+        if (list.isEmpty() || list.getLast().docID != docID) {
+            list.add(new PostingsEntry(docID, 0));
+        }
+        list.getLast().offsets.add(offset);
     }
 
     public PostingsList intersect(PostingsList other) {
         var result = new PostingsList();
-        for (var docID : this.list.keySet()) {
-            if (other.list.containsKey(docID)) {
+        for (var entry : this.list) {
+            if (other.searchDocID(entry.docID) != null) {
                 // We don't care about the actual offset values, so we can just add an empty PostingsEntry
-                result.list.put(docID, new PostingsEntry(docID, 0));
-                result.index.add(docID);
+                result.list.add(new PostingsEntry(entry.docID, 0));
             }
         }
         return result;
@@ -57,8 +58,8 @@ public class PostingsList {
     public String toString() {
         var sb = new StringBuilder();
         sb.append(list.size()).append(" ");
-        for (var docID : index) {
-            sb.append(docID).append(" ").append(list.get(docID)).append(" ");
+        for (var entry : list) {
+            sb.append(entry.docID).append(" ");
         }
         return sb.toString();
     }
@@ -66,11 +67,8 @@ public class PostingsList {
     public static PostingsList fromString(String s) {
         var list = new PostingsList();
         var data = s.split(" ");
-        for (int i = 1; i < data.length; i += 2) {
-            var docID = Integer.parseInt(data[i]);
-            var entry = PostingsEntry.fromString(data[i + 1]);
-            list.list.put(docID, entry);
-            list.index.add(docID);
+        for (int i = 1; i < data.length; i++) {
+            list.list.add(PostingsEntry.fromString(data[i]));
         }
         return list;
     }

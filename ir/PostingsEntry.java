@@ -8,13 +8,14 @@
 package ir;
 
 import java.io.Serializable;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
 
     public int docID;
     public double score;
-    public TreeSet<Integer> offsets;
+    public List<Integer> offsets;
 
     /**
      * PostingsEntries are compared by their score (only relevant
@@ -30,7 +31,7 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
     public PostingsEntry(int docID, double score) {
         this.docID = docID;
         this.score = score;
-        this.offsets = new TreeSet<>();
+        this.offsets = new ArrayList<>();
     }
 
     @Override
