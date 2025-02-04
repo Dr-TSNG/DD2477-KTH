@@ -1,9 +1,9 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, KTH, 2018
- */  
+ */
 
 package ir;
 
@@ -14,10 +14,10 @@ import java.nio.charset.*;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
- *   
+ *
  *   Both the words (the dictionary) and the data (the postings list) are
  *   stored in RandomAccessFiles that permit fast (almost constant-time)
- *   disk seeks. 
+ *   disk seeks.
  *
  *   When words are read and indexed, they are first put in an ordinary,
  *   main-memory HashMap. When all words are read, the index is committed
@@ -53,14 +53,14 @@ public class PersistentHashedIndex implements Index {
     long free = 0L;
 
     /** The cache as a main-memory hash map. */
-    HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
 
 
     // ===================================================================
 
     /**
-     *   A helper class representing one entry in the dictionary hashtable.
-     */ 
+     * A helper class representing one entry in the dictionary hashtable.
+     */
     public class Entry {
         //
         //  YOUR CODE HERE
@@ -70,39 +70,39 @@ public class PersistentHashedIndex implements Index {
 
     // ==================================================================
 
-    
+
     /**
-     *  Constructor. Opens the dictionary file and the data file.
-     *  If these files don't exist, they will be created. 
+     * Constructor. Opens the dictionary file and the data file.
+     * If these files don't exist, they will be created.
      */
     public PersistentHashedIndex() {
         try {
-            dictionaryFile = new RandomAccessFile( INDEXDIR + "/" + DICTIONARY_FNAME, "rw" );
-            dataFile = new RandomAccessFile( INDEXDIR + "/" + DATA_FNAME, "rw" );
-        } catch ( IOException e ) {
+            dictionaryFile = new RandomAccessFile(INDEXDIR + "/" + DICTIONARY_FNAME, "rw");
+            dataFile = new RandomAccessFile(INDEXDIR + "/" + DATA_FNAME, "rw");
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
             readDocInfo();
-        } catch ( FileNotFoundException e ) {
-        } catch ( IOException e ) {
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     *  Writes data to the data file at a specified place.
+     * Writes data to the data file at a specified place.
      *
-     *  @return The number of bytes written.
-     */ 
-    int writeData( String dataString, long ptr ) {
+     * @return The number of bytes written.
+     */
+    int writeData(String dataString, long ptr) {
         try {
-            dataFile.seek( ptr ); 
+            dataFile.seek(ptr);
             byte[] data = dataString.getBytes();
-            dataFile.write( data );
+            dataFile.write(data);
             return data.length;
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             e.printStackTrace();
             return -1;
         }
@@ -110,15 +110,15 @@ public class PersistentHashedIndex implements Index {
 
 
     /**
-     *  Reads data from the data file
-     */ 
-    String readData( long ptr, int size ) {
+     * Reads data from the data file
+     */
+    String readData(long ptr, int size) {
         try {
-            dataFile.seek( ptr );
+            dataFile.seek(ptr);
             byte[] data = new byte[size];
-            dataFile.readFully( data );
+            dataFile.readFully(data);
             return new String(data);
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
@@ -130,23 +130,23 @@ public class PersistentHashedIndex implements Index {
     //  Reading and writing to the dictionary file.
 
     /*
-     *  Writes an entry to the dictionary hash table file. 
+     *  Writes an entry to the dictionary hash table file.
      *
      *  @param entry The key of this entry is assumed to have a fixed length
      *  @param ptr   The place in the dictionary file to store the entry
      */
-    void writeEntry( Entry entry, long ptr ) {
+    void writeEntry(Entry entry, long ptr) {
         //
         //  YOUR CODE HERE
         //
     }
 
     /**
-     *  Reads an entry from the dictionary file.
+     * Reads an entry from the dictionary file.
      *
-     *  @param ptr The place in the dictionary file where to start reading.
+     * @param ptr The place in the dictionary file where to start reading.
      */
-    Entry readEntry( long ptr ) {   
+    Entry readEntry(long ptr) {
         //
         //  REPLACE THE STATEMENT BELOW WITH YOUR CODE 
         //
@@ -157,36 +157,36 @@ public class PersistentHashedIndex implements Index {
     // ==================================================================
 
     /**
-     *  Writes the document names and document lengths to file.
+     * Writes the document names and document lengths to file.
      *
-     * @throws IOException  { exception_description }
+     * @throws IOException { exception_description }
      */
     private void writeDocInfo() throws IOException {
-        FileOutputStream fout = new FileOutputStream( INDEXDIR + "/docInfo" );
-        for ( Map.Entry<Integer,String> entry : docNames.entrySet() ) {
+        FileOutputStream fout = new FileOutputStream(INDEXDIR + "/docInfo");
+        for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
             Integer key = entry.getKey();
             String docInfoEntry = key + ";" + entry.getValue() + ";" + docLengths.get(key) + "\n";
-            fout.write( docInfoEntry.getBytes() );
+            fout.write(docInfoEntry.getBytes());
         }
         fout.close();
     }
 
 
     /**
-     *  Reads the document names and document lengths from file, and
-     *  put them in the appropriate data structures.
+     * Reads the document names and document lengths from file, and
+     * put them in the appropriate data structures.
      *
-     * @throws     IOException  { exception_description }
+     * @throws IOException { exception_description }
      */
     private void readDocInfo() throws IOException {
-        File file = new File( INDEXDIR + "/docInfo" );
+        File file = new File(INDEXDIR + "/docInfo");
         FileReader freader = new FileReader(file);
-        try ( BufferedReader br = new BufferedReader(freader) ) {
+        try (BufferedReader br = new BufferedReader(freader)) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(";");
-                docNames.put( new Integer(data[0]), data[1] );
-                docLengths.put( new Integer(data[0]), new Integer(data[2]) );
+                docNames.put(new Integer(data[0]), data[1]);
+                docLengths.put(new Integer(data[0]), new Integer(data[2]));
             }
         }
         freader.close();
@@ -194,7 +194,7 @@ public class PersistentHashedIndex implements Index {
 
 
     /**
-     *  Write the index to files.
+     * Write the index to files.
      */
     public void writeIndex() {
         int collisions = 0;
@@ -207,10 +207,10 @@ public class PersistentHashedIndex implements Index {
             // 
             //  YOUR CODE HERE
             //
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        System.err.println( collisions + " collisions." );
+        System.err.println(collisions + " collisions.");
     }
 
 
@@ -218,10 +218,10 @@ public class PersistentHashedIndex implements Index {
 
 
     /**
-     *  Returns the postings for a specific term, or null
-     *  if the term is not in the index.
+     * Returns the postings for a specific term, or null
+     * if the term is not in the index.
      */
-    public PostingsList getPostings( String token ) {
+    public PostingsList getPostings(String token) {
         //
         //  REPLACE THE STATEMENT BELOW WITH YOUR CODE
         //
@@ -230,9 +230,9 @@ public class PersistentHashedIndex implements Index {
 
 
     /**
-     *  Inserts this token in the main-memory hashtable.
+     * Inserts this token in the main-memory hashtable.
      */
-    public void insert( String token, int docID, int offset ) {
+    public void insert(String token, int docID, int offset) {
         //
         //  YOUR CODE HERE
         //
@@ -240,12 +240,12 @@ public class PersistentHashedIndex implements Index {
 
 
     /**
-     *  Write index to file after indexing is done.
+     * Write index to file after indexing is done.
      */
     public void cleanup() {
-        System.err.println( index.keySet().size() + " unique words" );
-        System.err.print( "Writing index to disk..." );
+        System.err.println(index.keySet().size() + " unique words");
+        System.err.print("Writing index to disk...");
         writeIndex();
-        System.err.println( "done!" );
+        System.err.println("done!");
     }
 }
