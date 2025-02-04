@@ -9,7 +9,6 @@ package ir;
 
 import java.io.*;
 import java.util.*;
-import java.nio.charset.*;
 
 
 /*
@@ -43,6 +42,12 @@ public class PersistentHashedIndex implements Index {
     /** The dictionary hash table on disk can fit this many entries. */
     public static final long TABLESIZE = 611953L;
 
+    /** The dictionary hash table on disk can fit this many entries. */
+    public static final int MAX_WORD_LENGTH = 600;
+
+    /** The length of the longest word in the dictionary. */
+    public static final int ENTRYSIZE = Long.BYTES + Integer.BYTES + Integer.BYTES + MAX_WORD_LENGTH;
+
     /** The dictionary hash table is stored in this file. */
     RandomAccessFile dictionaryFile;
 
@@ -61,10 +66,19 @@ public class PersistentHashedIndex implements Index {
     /**
      * A helper class representing one entry in the dictionary hashtable.
      */
-    public class Entry {
-        //
-        //  YOUR CODE HERE
-        //
+    public static class Entry {
+        String token;
+        long dataPtr;
+        int dataSize;
+
+        Entry(String token, long dataPtr, int dataSize) {
+            if (token.length() > MAX_WORD_LENGTH) {
+                throw new RuntimeException("Token too long: " + token.length());
+            }
+            this.token = token;
+            this.dataPtr = dataPtr;
+            this.dataSize = dataSize;
+        }
     }
 
 
@@ -136,9 +150,20 @@ public class PersistentHashedIndex implements Index {
      *  @param ptr   The place in the dictionary file to store the entry
      */
     void writeEntry(Entry entry, long ptr) {
-        //
-        //  YOUR CODE HERE
-        //
+        try {
+            dictionaryFile.seek(ptr);
+            dictionaryFile.writeLong(entry.dataPtr);
+            dictionaryFile.writeInt(entry.dataSize);
+            dictionaryFile.writeInt(entry.token.length());
+            dictionaryFile.writeBytes(entry.token);
+            var length = entry.token.length();
+            if (length < MAX_WORD_LENGTH) {
+                byte[] padding = new byte[MAX_WORD_LENGTH - length];
+                dictionaryFile.write(padding);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -147,10 +172,25 @@ public class PersistentHashedIndex implements Index {
      * @param ptr The place in the dictionary file where to start reading.
      */
     Entry readEntry(long ptr) {
-        //
-        //  REPLACE THE STATEMENT BELOW WITH YOUR CODE 
-        //
-        return null;
+        try {
+            if (dictionaryFile.length() <= ptr) {
+                return null;
+            }
+            dictionaryFile.seek(ptr);
+            var dataPtr = dictionaryFile.readLong();
+            var dataSize = dictionaryFile.readInt();
+            var length = dictionaryFile.readInt();
+            if (length == 0) {
+                return null;
+            } else {
+                var data = new byte[length];
+                dictionaryFile.readFully(data);
+                return new Entry(new String(data), dataPtr, dataSize);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -185,8 +225,8 @@ public class PersistentHashedIndex implements Index {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(";");
-                docNames.put(new Integer(data[0]), data[1]);
-                docLengths.put(new Integer(data[0]), new Integer(data[2]));
+                docNames.put(Integer.parseInt(data[0]), data[1]);
+                docLengths.put(Integer.parseInt(data[0]), Integer.parseInt(data[2]));
             }
         }
         freader.close();
@@ -203,10 +243,22 @@ public class PersistentHashedIndex implements Index {
             writeDocInfo();
 
             // Write the dictionary and the postings list
-
-            // 
-            //  YOUR CODE HERE
-            //
+            for (var entry : index.entrySet()) {
+                var token = entry.getKey();
+                var postingsList = entry.getValue();
+                var dicIndex = Math.abs(token.hashCode()) % TABLESIZE;
+                var dicPtr = dicIndex * ENTRYSIZE;
+                var e = readEntry(dicPtr);
+                while (e != null) {
+                    collisions++;
+                    dicIndex = (dicIndex + 1) % TABLESIZE;
+                    dicPtr = dicIndex * ENTRYSIZE;
+                    e = readEntry(dicPtr);
+                }
+                var data = postingsList.toString();
+                writeEntry(new Entry(token, free, data.length()), dicPtr);
+                free += writeData(data, free);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -222,10 +274,25 @@ public class PersistentHashedIndex implements Index {
      * if the term is not in the index.
      */
     public PostingsList getPostings(String token) {
-        //
-        //  REPLACE THE STATEMENT BELOW WITH YOUR CODE
-        //
-        return null;
+        if (index.containsKey(token)) {
+            return index.get(token);
+        }
+        var dicIndex = Math.abs(token.hashCode()) % TABLESIZE;
+        var dicPtr = dicIndex * ENTRYSIZE;
+        PostingsList list = null;
+        var e = readEntry(dicPtr);
+        while (e != null) {
+            if (e.token.equals(token)) {
+                var data = readData(e.dataPtr, e.dataSize);
+                list = PostingsList.fromString(data);
+                break;
+            }
+            dicIndex = (dicIndex + 1) % TABLESIZE;
+            dicPtr = dicIndex * ENTRYSIZE;
+            e = readEntry(dicPtr);
+        }
+        index.put(token, list);
+        return list;
     }
 
 
@@ -233,9 +300,8 @@ public class PersistentHashedIndex implements Index {
      * Inserts this token in the main-memory hashtable.
      */
     public void insert(String token, int docID, int offset) {
-        //
-        //  YOUR CODE HERE
-        //
+        var list = index.computeIfAbsent(token, _ -> new PostingsList());
+        list.add(docID, offset);
     }
 
 

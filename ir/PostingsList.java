@@ -52,4 +52,26 @@ public class PostingsList {
         }
         return result;
     }
+
+    @Override
+    public String toString() {
+        var sb = new StringBuilder();
+        sb.append(list.size()).append(" ");
+        for (var docID : index) {
+            sb.append(docID).append(" ").append(list.get(docID)).append(" ");
+        }
+        return sb.toString();
+    }
+
+    public static PostingsList fromString(String s) {
+        var list = new PostingsList();
+        var data = s.split(" ");
+        for (int i = 1; i < data.length; i += 2) {
+            var docID = Integer.parseInt(data[i]);
+            var entry = PostingsEntry.fromString(data[i + 1]);
+            list.list.put(docID, entry);
+            list.index.add(docID);
+        }
+        return list;
+    }
 }

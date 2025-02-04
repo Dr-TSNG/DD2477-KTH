@@ -32,5 +32,24 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
         this.score = score;
         this.offsets = new TreeSet<>();
     }
+
+    @Override
+    public String toString() {
+        var sb = new StringBuilder();
+        sb.append(docID).append(";").append(score).append(";");
+        sb.append(String.join(",", offsets.stream().map(Object::toString).toArray(String[]::new)));
+        return sb.toString();
+    }
+
+    public static PostingsEntry fromString(String s) {
+        var parts = s.split(";");
+        var docID = Integer.parseInt(parts[0]);
+        var score = Double.parseDouble(parts[1]);
+        var entry = new PostingsEntry(docID, score);
+        for (var offset : parts[2].split(",")) {
+            entry.offsets.add(Integer.parseInt(offset));
+        }
+        return entry;
+    }
 }
 
