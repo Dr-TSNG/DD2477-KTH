@@ -22,20 +22,17 @@ https?://[a-z\d;/\?:@&=\+\$,#\._\-%!]+
 [a-z]\.([a-z]\.)+
 
 // File
-[a-z\d_\.]+\.[a-z]+
+\w+\.(txt|docx|doc|xlsx|xls|pptx|ppt)
 
 // Twenty-four seven
 \d+/\d+
 
-// Words / digits connected with dots or hyphens
-([a-z\d]+[\.\-])+[a-z\d]+
-
-// Digits connected with :
-(\d+:)+\d+
+// Words connected with hyphens
+(\w+-)+\w+
 
 // Numbers
 [\+\-\$]\d+
-(\d+,)+\d+
+(\d+[:,.])+\d+
 
 // Word for short
 [a-z]+'[a-z]+
