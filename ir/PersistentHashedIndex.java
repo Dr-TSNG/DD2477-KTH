@@ -40,10 +40,10 @@ public class PersistentHashedIndex implements Index {
     public static final String DOCINFO_FNAME = "docInfo";
 
     /** The dictionary hash table on disk can fit this many entries. */
-    public static final long TABLESIZE = 611953L;
+    public static final long TABLESIZE = 3500000L;
 
     /** The dictionary hash table on disk can fit this many entries. */
-    public static final int MAX_WORD_LENGTH = 600;
+    public static final int MAX_WORD_LENGTH = 60;
 
     /** The length of the longest word in the dictionary. */
     public static final int ENTRYSIZE = Long.BYTES + Integer.BYTES + Integer.BYTES + MAX_WORD_LENGTH;
@@ -58,7 +58,7 @@ public class PersistentHashedIndex implements Index {
     long free = 0L;
 
     /** The cache as a main-memory hash map. */
-    HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
+    Map<String, PostingsList> index = new HashMap<>();
 
 
     // ===================================================================
@@ -72,9 +72,6 @@ public class PersistentHashedIndex implements Index {
         int dataSize;
 
         Entry(String token, long dataPtr, int dataSize) {
-            if (token.length() > MAX_WORD_LENGTH) {
-                throw new RuntimeException("Token too long: " + token.length());
-            }
             this.token = token;
             this.dataPtr = dataPtr;
             this.dataSize = dataSize;
@@ -110,11 +107,11 @@ public class PersistentHashedIndex implements Index {
      *
      * @return The number of bytes written.
      */
-    int writeData(String dataString, long ptr) {
+    int writeData(RandomAccessFile file, String dataString, long ptr) {
         try {
-            dataFile.seek(ptr);
+            file.seek(ptr);
             byte[] data = dataString.getBytes();
-            dataFile.write(data);
+            file.write(data);
             return data.length;
         } catch (IOException e) {
             e.printStackTrace();
@@ -126,11 +123,11 @@ public class PersistentHashedIndex implements Index {
     /**
      * Reads data from the data file
      */
-    String readData(long ptr, int size) {
+    String readData(RandomAccessFile file, long ptr, int size) {
         try {
-            dataFile.seek(ptr);
+            file.seek(ptr);
             byte[] data = new byte[size];
-            dataFile.readFully(data);
+            file.readFully(data);
             return new String(data);
         } catch (IOException e) {
             e.printStackTrace();
@@ -149,17 +146,17 @@ public class PersistentHashedIndex implements Index {
      *  @param entry The key of this entry is assumed to have a fixed length
      *  @param ptr   The place in the dictionary file to store the entry
      */
-    void writeEntry(Entry entry, long ptr) {
+    void writeEntry(RandomAccessFile dict, Entry entry, long ptr) {
         try {
-            dictionaryFile.seek(ptr);
-            dictionaryFile.writeLong(entry.dataPtr);
-            dictionaryFile.writeInt(entry.dataSize);
-            dictionaryFile.writeInt(entry.token.length());
-            dictionaryFile.writeBytes(entry.token);
+            dict.seek(ptr);
+            dict.writeLong(entry.dataPtr);
+            dict.writeInt(entry.dataSize);
+            dict.writeInt(entry.token.length());
+            dict.writeBytes(entry.token);
             var length = entry.token.length();
             if (length < MAX_WORD_LENGTH) {
                 byte[] padding = new byte[MAX_WORD_LENGTH - length];
-                dictionaryFile.write(padding);
+                dict.write(padding);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -171,20 +168,20 @@ public class PersistentHashedIndex implements Index {
      *
      * @param ptr The place in the dictionary file where to start reading.
      */
-    Entry readEntry(long ptr) {
+    Entry readEntry(RandomAccessFile dict, long ptr) {
         try {
-            if (dictionaryFile.length() <= ptr) {
+            if (dict.length() <= ptr) {
                 return null;
             }
-            dictionaryFile.seek(ptr);
-            var dataPtr = dictionaryFile.readLong();
-            var dataSize = dictionaryFile.readInt();
-            var length = dictionaryFile.readInt();
+            dict.seek(ptr);
+            var dataPtr = dict.readLong();
+            var dataSize = dict.readInt();
+            var length = dict.readInt();
             if (length == 0) {
                 return null;
             } else {
                 var data = new byte[length];
-                dictionaryFile.readFully(data);
+                dict.readFully(data);
                 return new Entry(new String(data), dataPtr, dataSize);
             }
         } catch (IOException e) {
@@ -248,16 +245,16 @@ public class PersistentHashedIndex implements Index {
                 var postingsList = entry.getValue();
                 var dicIndex = Math.abs(token.hashCode()) % TABLESIZE;
                 var dicPtr = dicIndex * ENTRYSIZE;
-                var e = readEntry(dicPtr);
+                var e = readEntry(dictionaryFile, dicPtr);
                 while (e != null) {
                     collisions++;
                     dicIndex = (dicIndex + 1) % TABLESIZE;
                     dicPtr = dicIndex * ENTRYSIZE;
-                    e = readEntry(dicPtr);
+                    e = readEntry(dictionaryFile, dicPtr);
                 }
                 var data = postingsList.toString();
-                writeEntry(new Entry(token, free, data.length()), dicPtr);
-                free += writeData(data, free);
+                writeEntry(dictionaryFile, new Entry(token, free, data.length()), dicPtr);
+                free += writeData(dataFile, data, free);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -280,16 +277,16 @@ public class PersistentHashedIndex implements Index {
         var dicIndex = Math.abs(token.hashCode()) % TABLESIZE;
         var dicPtr = dicIndex * ENTRYSIZE;
         PostingsList list = null;
-        var e = readEntry(dicPtr);
+        var e = readEntry(dictionaryFile, dicPtr);
         while (e != null) {
             if (e.token.equals(token)) {
-                var data = readData(e.dataPtr, e.dataSize);
+                var data = readData(dataFile, e.dataPtr, e.dataSize);
                 list = PostingsList.fromString(data);
                 break;
             }
             dicIndex = (dicIndex + 1) % TABLESIZE;
             dicPtr = dicIndex * ENTRYSIZE;
-            e = readEntry(dicPtr);
+            e = readEntry(dictionaryFile, dicPtr);
         }
         index.put(token, list);
         return list;
@@ -300,6 +297,10 @@ public class PersistentHashedIndex implements Index {
      * Inserts this token in the main-memory hashtable.
      */
     public void insert(String token, int docID, int offset) {
+        if (token.length() > MAX_WORD_LENGTH) {
+            // We don't care about tokens that are too long
+            return;
+        }
         var list = index.computeIfAbsent(token, _ -> new PostingsList());
         list.add(docID, offset);
     }
