@@ -1,0 +1,32 @@
+Query 1: education mathematics graduate UC Davis
+Student_Organizations.f 0
+Candidate_Statements.f 0
+Elaine_Kasimatis.f 0
+Evelyn_Silvia.f 2
+Events_Calendars.f 0
+Graduate_Groups.f 1
+Linda_Katehi.f 0
+Private_Tutoring.f 0
+The_Mary_Jeanne_Gilhooly_Award.f 0
+UCD_Honors_and_Prizes.f 0
+University_Departments.f 1
+Precision: 3/11 = 27.27%
+Recall: 3/100 = 3%
+
+Query 2: mathematics graduate UC Davis
+27 returned documents
+
+Query 3: mathematics graduate level UC Davis
+Candidate_Statements.f 0
+Computer_Science.f 0
+ECE_Cource_Reviews.f 0
+Economics.f 2
+Graduate_Groups.f 1
+Mathematics.f 3
+Private_Tutoring.f 0
+Statistics.f 3
+Teaching_Assistants.f 0
+UCD_Honors_and_Prizes.f 0
+What_I_Wish_I_Knew..Before_Coming_to_UC_Davis_Entromology.f 1
+Precision: 5/11 = 45.45%
+Recall: 5/100 = 5%

@@ -1,0 +1,11 @@
+Difficult case 1: Biological_Systems_Engineering.f
+The document contains a description of a graduate program, but info relevent to mathematics is a undergraduate program.
+
+Difficult case 2: Computer_Science.f
+The document discusses undergraduate and graduate programs in Computer Science. While it provides details about courses, faculty, and program structures, there is no mention of a graduate program in mathematics or any related themes.
+
+Difficult case 3: Economics.f
+The document contains graduate economics history programs, but mathematics is described as a prerequest, so it's fairly relevant document.
+
+precision: 15/22 = 68.18%
+recall: 15/100 = 15%
